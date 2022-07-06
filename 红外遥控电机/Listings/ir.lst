@@ -1,0 +1,138 @@
+C51 COMPILER V9.54   IR                                                                    07/06/2022 22:41:54 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE IR
+OBJECT MODULE PLACED IN .\Objects\ir.obj
+COMPILER INVOKED BY: E:\keil\C51\BIN\C51.EXE ir.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\ir.lst) O
+                    -BJECT(.\Objects\ir.obj)
+
+line level    source
+
+   1          #include <REGX52.H>
+   2          #include <h.h>
+   3          #include <timer.h>
+   4          
+   5          extern unsigned int ir_time=0;
+   6          extern unsigned char ir_state=0;
+   7          extern unsigned char ir_adress=0;
+   8          extern unsigned char ir_command=0;
+   9          extern unsigned char ir_data[4]={0};
+  10          extern unsigned int ir_pdata=0;
+  11          extern unsigned char ir_repeatflag=0;
+  12          extern unsigned char ir_dataflag=0;
+  13          
+  14          void ir_init(void)
+  15          {
+  16   1              Timer0Init();
+  17   1              int0_init();
+  18   1      }
+  19          
+  20          unsigned char ir_getdata(void)
+  21          {
+  22   1              if(ir_dataflag)
+  23   1              {
+  24   2                      ir_dataflag=0;
+  25   2                      return 1;
+  26   2              }
+  27   1              return 0;
+  28   1      }
+  29          
+  30          unsigned char ir_getadress(void)
+  31          {
+  32   1              return ir_adress;
+  33   1      }
+  34          
+  35          unsigned char ir_getcommand(void)
+  36          {
+  37   1              return ir_command;
+  38   1      }
+  39          
+  40          unsigned char ir_getrepeat(void)
+  41          {
+  42   1              if(ir_repeatflag)
+  43   1              {
+  44   2                      ir_repeatflag=0;
+  45   2                      return 1;
+  46   2              }
+  47   1              return 0;
+  48   1      }
+  49          
+  50          void runtimer(void)     interrupt 0
+  51          {
+  52   1              if(ir_state==0)
+  53   1              {
+  54   2                      timer0_set_time(0);
+C51 COMPILER V9.54   IR                                                                    07/06/2022 22:41:54 PAGE 2   
+
+  55   2                      timer0_run(1);
+  56   2                      ir_state=1;
+  57   2              }
+  58   1              else  if(ir_state==1)
+  59   1              {       
+  60   2                      
+  61   2                      ir_time=timer0_read_time();
+  62   2                      timer0_set_time(0);
+  63   2                      if( ir_time > 12442-400  &&  ir_time < 12442+400 )//接收标志的上下400//晶振频率问题
+  64   2                      {
+  65   3                              ir_state=2;     
+  66   3                      }
+  67   2                      else if( ir_time > 10368-400  &&  ir_time < 10368+400 )//repeat标志的上下400
+  68   2                      {
+  69   3                              ir_repeatflag=1;
+  70   3                              timer0_run(0);
+  71   3                              ir_state=0;
+  72   3                      }
+  73   2                      else//error
+  74   2                      {
+  75   3                              ir_state=1;
+  76   3                      }
+  77   2              }
+  78   1              else if(ir_state==2)
+  79   1              {
+  80   2                      ir_time=timer0_read_time();
+  81   2                      timer0_set_time(0);
+  82   2                      if( ir_time > 1032-400  &&  ir_time < 1032+400 )//0的上下400//晶振频率问题
+  83   2                      {
+  84   3                              ir_data[ir_pdata/8]&=~(0x01<<ir_pdata%8);
+  85   3                              ir_pdata++;
+  86   3                      }
+  87   2                      else if( ir_time > 2074-400  &&  ir_time < 2074+400 )//0的上下400//晶振频率问题
+  88   2                      {
+  89   3                              ir_data[ir_pdata/8]|=(0x01<<ir_pdata%8);
+  90   3                              ir_pdata++;
+  91   3                      }
+  92   2                      else
+  93   2                      {
+  94   3                              ir_state=1;
+  95   3                              ir_pdata=0;
+  96   3                      }
+  97   2                      if(ir_pdata>=32)
+  98   2                      {
+  99   3                              ir_pdata=0;
+ 100   3                              if(     ir_data[0]==~ir_data[1] &&      ir_data[2]==~ir_data[3])
+ 101   3                              {
+ 102   4                                      ir_adress=ir_data[0];
+ 103   4                                      ir_command=ir_data[2];
+ 104   4                                      ir_dataflag=1;
+ 105   4                              }
+ 106   3                              timer0_run(0);
+ 107   3                              ir_state=0;
+ 108   3                      }
+ 109   2              }
+ 110   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    409    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+C51 COMPILER V9.54   IR                                                                    07/06/2022 22:41:54 PAGE 3   
+
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     13    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
