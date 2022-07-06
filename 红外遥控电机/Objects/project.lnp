@@ -1,8 +1,0 @@
-".\Objects\main.obj",
-".\Objects\h.obj",
-".\Objects\timer.obj",
-".\Objects\ir.obj",
-".\Objects\LCD1602.obj" 
-TO ".\Objects\project" 
-PRINT(".\Listings\project.m51") RAMSIZE(256) 
-DISABLEWARNING (16) 
